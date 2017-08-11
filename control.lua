@@ -1,0 +1,150 @@
+local ticker
+do
+	local function PUTFISHLOL(surface, tiles)
+		local ent = surface.create_entity({
+			name = "fish",
+			position = tiles[math.random(1, #tiles)],
+		})
+		if ent and ent.valid then return true end
+		return false
+	end
+
+	local acceptableLivingConditions = {"water-green", "water", "deepwater-green", "deepwater"}
+
+	ticker = function(event)
+		if event.tick % 120 == 0 then
+			if not global.ents or #global.ents == 0 then
+				-- rehash table just in cases - the extra s is for 'sausage'
+				if global.ents then global.ents = {} end
+				script.on_event(defines.events.on_tick, nil)
+			else
+				for i, ent in next, global.ents do
+					if ent.e and ent.e.valid then
+						if ent.e.fluidbox then
+							for k = 1, #ent.e.fluidbox do
+								local f = ent.e.fluidbox[k]
+								if f and f.type == "fish-water" and f.amount > 0.99 then
+									local amount = f.amount
+									local tiles = ent.e.surface.get_connected_tiles(ent.pos, acceptableLivingConditions)
+									if type(tiles) ~= "table" or #tiles == 0 then
+										game.print({"fishyfishyfishy.wtf"})
+										table.remove(global.ents, i)
+										ent.e.destroy()
+									else
+										while amount > 0.99 do
+											PUTFISHLOL(ent.e.surface, tiles)
+											amount = amount - 1
+										end
+										if amount >= 0 then
+											f.amount = amount
+										else
+											f.amount = 0
+										end
+										ent.e.fluidbox[k] = f
+										break
+									end
+								end
+							end
+						end
+					else
+						-- Yes, we skip out early if we remove mid-table. #care
+						table.remove(global.ents, i)
+					end
+				end
+			end
+		end
+	end
+end
+
+do
+	local function enableRecipes(force, recipes)
+		for _, r in next, recipes do
+			if force.recipes[r] and force.recipes[r].valid then
+				force.recipes[r].enabled = true
+			end
+		end
+	end
+
+	script.on_init(function()
+		local recipes = {
+			"fish-output",
+			"fill-fish-water-barrel",
+			"empty-fish-water-barrel",
+		}
+		for _, force in pairs(game.forces) do
+			local t = force.technologies["fluid-handling"]
+			if t and t.valid and t.researched then
+				enableRecipes(force, recipes)
+			end
+		end
+
+		if global.ents and #global.ents ~= 0 then
+			script.on_event(defines.events.on_tick, ticker)
+		end
+	end)
+
+	script.on_load(function()
+		if global.ents and #global.ents ~= 0 then
+			script.on_event(defines.events.on_tick, ticker)
+		end
+	end)
+end
+
+
+do
+	local NAME = "fish-output"
+
+	local function onBuilt(event)
+		if not event or not event.created_entity or not event.created_entity.valid then return end
+		if event.created_entity.name ~= NAME then return end
+		local ent = event.created_entity
+		local o = ent.orientation
+
+		local scan = {}
+		-- output = end stuck in ground
+		if o == 0.5 then
+			scan[1] = ent.position.x
+			scan[2] = ent.position.y - 1
+		elseif o == 0.75 then
+			scan[1] = ent.position.x + 1
+			scan[2] = ent.position.y
+		elseif o == 0 then
+			scan[1] = ent.position.x
+			scan[2] = ent.position.y + 1
+		elseif o == 0.25 then
+			scan[1] = ent.position.x - 1
+			scan[2] = ent.position.y
+		end
+
+		local surface = ent.surface
+		if not surface or not surface.valid then return end
+
+		local t = surface.get_tile(scan[1], scan[2])
+		if (t.name ~= "water") and (t.name ~= "water-green") then
+			-- Invalid tile placement, return to inventory.
+			game.print({"", "Someone tried to output fish-water on the ground. Unforgivable!"})
+			ent.destroy()
+			local p = event.player_index and game.players[event.player_index]
+			if not p then p = event.robot.force.players[math.random(1, #event.robot.force.players)] end
+			p.insert("fish-output")
+			return
+		end
+
+		if not global.ents then global.ents = {} end
+		ent.operable = false
+		ent.rotatable = false
+
+		-- They like going south. It feels like going downhill.
+		table.insert(global.ents, {
+			e = ent,
+			pos = scan,
+			version = 1,
+		})
+
+		script.on_event(defines.events.on_tick, ticker)
+	end
+
+	script.on_event(defines.events.on_built_entity, onBuilt)
+	script.on_event(defines.events.on_robot_built_entity, onBuilt)
+
+end
