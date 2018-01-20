@@ -29,7 +29,9 @@ do
 	fluid.icon = "__base__/graphics/icons/fish.png"
 	fluid.gas_temperature = -1
 	fluid.pressure_to_speed_ratio = 1
-	fluid.flow_to_energy_ratio = 1
+	fluid.flow_to_energy_ratio = 0
+	fluid.max_push_amount = 10 -- ???
+	fluid.ratio_to_push = 1    -- ???
 
 	table.insert(data.raw.technology["fluid-handling"].effects, {
 		type = "unlock-recipe",

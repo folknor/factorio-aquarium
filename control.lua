@@ -19,30 +19,24 @@ do
 				script.on_event(defines.events.on_tick, nil)
 			else
 				for i, ent in next, global.ents do
-					if ent.e and ent.e.valid then
-						if ent.e.fluidbox then
-							for k = 1, #ent.e.fluidbox do
-								local f = ent.e.fluidbox[k]
-								if f and f.type == "fish-water" and f.amount > 0.99 then
-									local amount = f.amount
-									local tiles = ent.e.surface.get_connected_tiles(ent.pos, acceptableLivingConditions)
-									if type(tiles) ~= "table" or #tiles == 0 then
-										game.print({"fishyfishyfishy.wtf"})
-										table.remove(global.ents, i)
-										ent.e.destroy()
-									else
-										while amount > 0.99 do
-											PUTFISHLOL(ent.e.surface, tiles)
-											amount = amount - 1
-										end
-										if amount >= 0 then
-											f.amount = amount
-										else
-											f.amount = 0
-										end
-										ent.e.fluidbox[k] = f
-										break
+					if ent.e and ent.e.valid and ent.e.fluidbox then
+						for k = 1, #ent.e.fluidbox do
+							local f = ent.e.fluidbox[k]
+							if f and f.name == "fish-water" and f.amount > 0.99 then
+								local amount = f.amount
+								local tiles = ent.e.surface.get_connected_tiles(ent.pos, acceptableLivingConditions)
+								if type(tiles) ~= "table" or #tiles == 0 then
+									game.print({"fishyfishyfishy.wtf"})
+									table.remove(global.ents, i)
+									ent.e.destroy()
+								else
+									while amount > 0.99 do
+										PUTFISHLOL(ent.e.surface, tiles)
+										amount = amount - 1
 									end
+									f.amount = math.max(amount, 0)
+									ent.e.fluidbox[k] = f
+									break
 								end
 							end
 						end
