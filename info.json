@@ -1,12 +1,12 @@
 {
 	"name": "folk-aquarium",
-	"version": "0.1.6",
+	"version": "0.1.7",
 	"title": "Aquarium",
 	"description": "Allows you to put fish in water and breed them. Revolutionary technology.",
 	"author": "folk",
 	"contact": "",
 	"homepage": "https://forums.factorio.com/viewtopic.php?f=94&t=45554",
-	"factorio_version": "0.16",
+	"factorio_version": "1.00",
 	"dependencies": ["base"],
 	"license": "CC-BY-NC 4.0"
 }
